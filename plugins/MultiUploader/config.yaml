@@ -1,0 +1,33 @@
+# Powered by jQuery File Upload Plugin.
+# https://github.com/blueimp/jQuery-File-Upload
+
+name: Multi Uploader
+id:   MultiUploader
+key:  multiuploader
+version: 1.0
+author_link: https://alfasado.net/
+author_name: Alfasado Inc.
+l10n_class: MultiUploader::L10N
+description: <__trans phrase="Allows to select multiple files at once and upload them simultaneously.<br /><a target="_blank" href="https://github.com/blueimp/jQuery-File-Upload">Powered by jQuery File Upload Plugin.</a>">
+applications:
+    cms:
+        methods:
+            upload_multi: $multiuploader::MultiUploader::Plugin::_upload_multi
+        menus:
+            asset:multiuploader:
+                label: Multi Uploader
+                order: 300
+                mode: start_upload
+                args:
+                    _type: multiuploader
+                permission: upload
+                view:
+                    - website
+                    - blog
+callbacks:
+    MT::App::CMS::template_output.asset_upload: $multiuploader::MultiUploader::Plugin::_tmpl_output
+settings:
+    upload_path:
+        default: files
+blog_config_template: multiuploader_cfg.tmpl
+
