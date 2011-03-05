@@ -54,7 +54,7 @@ sub _tmpl_output {
         my $action = $app->path . $app->script;
         my $plugin = MT->component( 'MultiUploader' );
         my $get_from = 'blog:'. $blog->id;
-        my $upload_path = $plugin->get_config_value( 'upload_path' );
+        my $upload_path = $plugin->get_config_value( 'upload_path', 'blog:'. $blog_id );
         my $label = $plugin->translate( 'Uploade files' );
         my $site_root = $plugin->translate( 'Site Root' );
         my $up2 = $plugin->translate( 'Upload Destination' );
