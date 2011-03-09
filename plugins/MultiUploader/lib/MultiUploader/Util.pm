@@ -17,15 +17,6 @@ use Encode;
 
 sub save_asset {
     my ( $app, $blog, $params, $cb ) = @_;
-#    my %params = ( file => $file,
-#                   author => $author,
-#                   label => $label,
-#                   description => $description,
-#                   parent => $parent_asset->id,
-#                   object => $obj,
-#                   tags => \@tags,
-#                   );
-#    my $asset = save_asset( $app, $blog, \%params );
     my $blog_id = $blog->id;
     my $file_path = $params->{ file };
     my $fmgr = $blog->file_mgr;
@@ -175,16 +166,6 @@ sub is_writable {
 sub upload {
     my ( $app, $blog, $name, $dir, $params ) = @_;
     my $limit = $app->config( 'CGIMaxUpload' ) || 20480000;
-#    my %params = ( object => $obj,
-#                   author => $author,
-#                   rename => 1,
-#                   label => 'foo',
-#                   description => 'bar',
-#                   format_LF => 1,
-#                   singler => 1,
-#                   no_asset => 1,
-#                   );
-#    my $upload = upload( $app, $blog, $name, $dir, \%params );
     my $obj = $params->{ object };
     my $rename = $params->{ 'rename' };
     my $label = $params->{ label };
@@ -370,10 +351,6 @@ sub url2path {
 }
 
 sub site_path {
-#     my $blog = shift;
-#     my $site_path = $blog->archive_path;
-#     $site_path = $blog->site_path unless $site_path;
-#     return chomp_dir( $site_path );
     my ( $blog, $exclude_archive_path ) = @_;
     my $site_path;
     unless ( $exclude_archive_path ) {
@@ -668,19 +645,6 @@ sub upload_callback {
     return 1;
 }
 
-sub is_image { goto &if_image }
-
-sub if_image {
-    my $file = shift;
-    my $basename = File::Basename::basename( $file );
-    require MT::Asset;
-    my $asset_pkg = MT::Asset->handler_for_file( $basename );
-    if ( $asset_pkg eq 'MT::Asset::Image' ) {
-        return 1;
-    }
-    return 0;
-}
-
 sub chomp_dir {
     my $dir = shift;
     my @path = File::Spec->splitdir( $dir );
@@ -712,21 +676,6 @@ sub add_slash {
         $path .= '/';
     }
     return $path;
-}
-
-sub make_dir {
-    my $path = shift;
-    return 1 if (-d $path );
-    my $fmgr = MT::FileMgr->new( 'Local' ) or return 0;# die MT::FileMgr->errstr;
-    $path =~ s!/$!! unless $path eq '/';
-    unless ( $fmgr->exists( $path ) ) {
-        $fmgr->mkpath( $path );
-        if (-d $path ) {
-            # chmod ( 0777, $path );
-            return 1;
-        }
-    }
-    return 0;
 }
 
 sub create_thumbnail {
