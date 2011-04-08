@@ -166,6 +166,16 @@ sub is_writable {
 sub upload {
     my ( $app, $blog, $name, $dir, $params ) = @_;
     my $limit = $app->config( 'CGIMaxUpload' ) || 20480000;
+#    my %params = ( object => $obj,
+#                   author => $author,
+#                   rename => 1,
+#                   label => 'foo',
+#                   description => 'bar',
+#                   format_LF => 1,
+#                   singler => 1,
+#                   no_asset => 1,
+#                   );
+#    my $upload = upload( $app, $blog, $name, $dir, \%params );
     my $obj = $params->{ object };
     my $rename = $params->{ 'rename' };
     my $label = $params->{ label };
@@ -174,6 +184,12 @@ sub upload {
     my $no_asset = $params->{ no_asset };
     my $description = $params->{ description };
     my $force_decode_filename = $params->{ force_decode_filename };
+    my $no_decode = $app->config( 'NoDecodeFilename' );
+    if (! $force_decode_filename ) {
+        if ( $no_decode ) {
+            $force_decode_filename = 1;
+        }
+    }
     my $fmgr = MT::FileMgr->new( 'Local' ) or die MT::FileMgr->errstr;
     my $q = $app->param;
     my @files = $q->upload( $name );
@@ -190,7 +206,9 @@ sub upload {
         my $orig_filename = file_basename( $file );
         $orig_filename = decode_url( $orig_filename ) if $force_decode_filename;
         my $file_label = file_label( $orig_filename );
-        $orig_filename = set_upload_filename( $orig_filename );
+        if (! $no_decode ) {
+            $orig_filename = set_upload_filename( $orig_filename );
+        }
         my $out = File::Spec->catfile( $dir, $orig_filename );
         if ( $rename ) {
             $out = uniq_filename( $out );
@@ -201,7 +219,9 @@ sub upload {
                                     $out, $fmgr->errstr );
         }
         my $temp = "$out.new";
-        open ( my $fh, ">$out" ) or die "Can't open $out!";
+        my $umask = $app->config( 'UploadUmask' );
+        my $old = umask( oct $umask );
+        open ( my $fh, ">$temp" ) or die "Can't open $temp!";
         binmode ( $fh );
         while( read ( $file, my $buffer, 1024 ) ) {
             $buffer = format_LF( $buffer ) if $format_LF;
@@ -209,6 +229,7 @@ sub upload {
         }
         close ( $fh );
         $fmgr->rename( $temp, $out );
+        umask( $old );
         my $user = $params->{ author };
         $user = current_user( $app ) unless defined $user;
         if ( $no_asset ) {
@@ -414,10 +435,15 @@ sub set_upload_filename {
 sub uniq_filename {
     my $file = shift;
     require File::Basename;
+    my $no_decode = MT->config( 'NoDecodeFilename' );
     my $dir = File::Basename::dirname( $file );
     my $tilda = quotemeta( '%7E' );
     $file =~ s/$tilda//g;
-    $file = File::Spec->catfile( $dir, set_upload_filename( $file ) );
+    if ( $no_decode ) {
+        $file = File::Spec->catfile( $dir, $file );
+    } else {
+        $file = File::Spec->catfile( $dir, set_upload_filename( $file ) );
+    }
     return $file unless ( -f $file );
     my $file_extension = file_extension( $file );
     my $base = $file;
