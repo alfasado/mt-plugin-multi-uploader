@@ -40,7 +40,7 @@ sub _upload_multi {
 
 sub _tmpl_output {
     my ( $cb, $app, $tmpl ) = @_;
-    if (! $app->param( '_type' ) != 'multiuploader' ) {
+    if ( $app->param( '_type' ) ne 'multiuploader' ) {
         return;
     }
     if ( $$tmpl =~ m!</head>! ) {
@@ -58,10 +58,10 @@ sub _tmpl_output {
         my $label = $plugin->translate( 'Uploade files' );
         my $site_root = $plugin->translate( 'Site Root' );
         my $up2 = $plugin->translate( 'Upload Destination' );
+        $static_path .= 'plugins';
         my $header =<<MTML;
-        <link rel="stylesheet" href="$static_path\plugins/MultiUploader/jquery-ui.css" id="theme" />
-        <link rel="stylesheet" href="$static_path\plugins/MultiUploader/jquery.fileupload-ui.css" />
-        <link rel="stylesheet" href="$static_path\plugins/MultiUploader/jquery.fileupload-ui.css" />
+        <link rel="stylesheet" href="$static_path/MultiUploader/jquery-ui.css" id="theme" />
+        <link rel="stylesheet" href="$static_path/MultiUploader/jquery.fileupload-ui.css" />
 MTML
         $$tmpl =~ s!(</head>)!$header$1!;
         my $pointer = quotemeta( '<form method="post" enctype="multipart/form-data"' );
@@ -95,9 +95,9 @@ function setMiddlePath ( fld ) {
 }
 </script>
 
-<script src="$static_path\plugins/MultiUploader/jquery-ui.min.js"></script>
-<script src="$static_path\plugins/MultiUploader/jquery.fileupload.js"></script>
-<script src="$static_path\plugins/MultiUploader/jquery.fileupload-ui.js"></script>
+<script src="$static_path/MultiUploader/jquery-ui.min.js"></script>
+<script src="$static_path/MultiUploader/jquery.fileupload.js"></script>
+<script src="$static_path/MultiUploader/jquery.fileupload-ui.js"></script>
 MTML
         my $script =<<'MTML';
 <script type="text/javascript">
