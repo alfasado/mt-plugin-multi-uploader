@@ -166,6 +166,9 @@ sub is_writable {
 sub upload {
     my ( $app, $blog, $name, $dir, $params ) = @_;
     my $limit = $app->config( 'CGIMaxUpload' ) || 20480000;
+    $app->validate_magic() or return 0;
+    return 0 unless $app->can_do( 'save_asset' );
+    return 0 unless $blog;
 #    my %params = ( object => $obj,
 #                   author => $author,
 #                   rename => 1,
@@ -176,6 +179,7 @@ sub upload {
 #                   no_asset => 1,
 #                   );
 #    my $upload = upload( $app, $blog, $name, $dir, \%params );
+
     my $obj = $params->{ object };
     my $rename = $params->{ 'rename' };
     my $label = $params->{ label };
@@ -204,6 +208,38 @@ sub upload {
     }
     for my $file ( @files ) {
         my $orig_filename = file_basename( $file );
+        my $basename = $orig_filename;
+        $basename =~ s!\\!/!g;    ## Change backslashes to forward slashes
+        $basename =~ s!^.*/!!;    ## Get rid of full directory paths
+        if ( $basename =~ m!\.\.|\0|\|! ) {
+            return ( undef, 1 );
+        }
+        $basename
+            = Encode::is_utf8( $basename )
+            ? $basename
+            : Encode::decode( $app->charset,
+            File::Basename::basename( $basename ) );
+        if ( my $deny_exts = $app->config->DeniedAssetFileExtensions ) {
+            my @deny_exts = map {
+                if   ( $_ =~ m/^\./ ) {qr/$_/i}
+                else                  {qr/\.$_/i}
+            } split '\s?,\s?', $deny_exts;
+            my @ret = File::Basename::fileparse( $basename, @deny_exts );
+            if ( $ret[2] ) {
+                return ( undef, 1 );
+            }
+        }
+        if ( my $allow_exts = $app->config( 'AssetFileExtensions' ) ) {
+            my @allow_exts = map {
+                if   ( $_ =~ m/^\./ ) {qr/$_/i}
+                else                  {qr/\.$_/i}
+            } split '\s?,\s?', $allow_exts;
+            my @ret = File::Basename::fileparse( $basename, @allow_exts );
+            unless ( $ret[2] ) {
+                return ( undef, 1 );
+            }
+        }
+        $orig_filename = $basename;
         $orig_filename = decode_url( $orig_filename ) if $force_decode_filename;
         my $file_label = file_label( $orig_filename );
         if (! $no_decode ) {
@@ -220,8 +256,15 @@ sub upload {
         }
         my $temp = "$out.new";
         my $umask = $app->config( 'UploadUmask' );
-        my $old = umask( oct $umask );
         open ( my $fh, ">$temp" ) or die "Can't open $temp!";
+        if ( is_image( $file ) ) {
+            require MT::Image;
+            if (! MT::Image::is_valid_image( $fh ) ) {
+                close ( $fh );
+                next;
+            }
+        }
+        my $old = umask( oct $umask );
         binmode ( $fh );
         while( read ( $file, my $buffer, 1024 ) ) {
             $buffer = format_LF( $buffer ) if $format_LF;

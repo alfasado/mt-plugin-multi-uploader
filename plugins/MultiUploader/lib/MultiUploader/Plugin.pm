@@ -8,17 +8,20 @@ sub _upload_multi {
     my $app = shift;
     my $blog = $app->blog;
     my $site_path = site_path( $blog, 1 );
-    $app->validate_magic() or return;
+    if (! $blog ) {
+        return MT->translate( 'Invalid request.' );
+    }
+    $app->validate_magic() or return MT->translate( 'Permission denied.' );
     my $user = $app->user;
     if (! is_user_can( $blog, $user, 'upload' ) ) {
-        return;
+        return MT->translate( 'Permission denied.' );
     }
     my $middle_path = $app->param( 'middle_path' );
     $middle_path =~ s!^/!!;
     $middle_path =~ s!\.\.!!;
     my $upload_dir = File::Spec->catdir( $site_path, $middle_path );
     if (! is_writable( $upload_dir, $blog ) ) {
-        return;
+        return MT->translate( 'Invalid request.' );
     }
     my ( $res, $err ) = upload (
         $app, $blog, 'file', $upload_dir, { rename => 1, force_decode_filename => 1, singler => 1 }, 1
