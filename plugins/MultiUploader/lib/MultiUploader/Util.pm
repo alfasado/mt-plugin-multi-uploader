@@ -4,7 +4,7 @@ use Exporter;
 
 @MultiUploader::Util::ISA = qw( Exporter );
 use vars qw( @EXPORT_OK );
-@EXPORT_OK = qw( upload site_path is_writable is_user_can );
+@EXPORT_OK = qw( upload site_path is_writable is_user_can utf8_off );
 
 use MT::Util qw( offset_time_list encode_url decode_url perl_sha1_digest_hex );
 
@@ -209,11 +209,14 @@ sub upload {
     for my $file ( @files ) {
         my $orig_filename = file_basename( $file );
         my $basename = $orig_filename;
+        $basename = encode_url( $basename );
+        $basename =~ s/%2E/\./g;
         $basename =~ s!\\!/!g;    ## Change backslashes to forward slashes
         $basename =~ s!^.*/!!;    ## Get rid of full directory paths
         if ( $basename =~ m!\.\.|\0|\|! ) {
             return ( undef, 1 );
         }
+        MT->log($basename);
         $basename
             = Encode::is_utf8( $basename )
             ? $basename
@@ -240,7 +243,7 @@ sub upload {
             }
         }
         $orig_filename = $basename;
-        $orig_filename = decode_url( $orig_filename ) if $force_decode_filename;
+        $orig_filename = encode_url( $orig_filename ) if $force_decode_filename;
         my $file_label = file_label( $orig_filename );
         if (! $no_decode ) {
             $orig_filename = set_upload_filename( $orig_filename );
@@ -457,6 +460,8 @@ sub current_user {
 sub set_upload_filename {
     my $file = shift;
     $file = File::Basename::basename( $file );
+    MT->log(1235);
+
     my $ctext = encode_url( $file );
     if ( $ctext ne $file ) {
         unless ( MT->version_number < 5 ) {
@@ -472,6 +477,7 @@ sub set_upload_filename {
         $file = substr ( $file, 0, 255 - $ext_len );
         $file .= '.' . $extension;
     }
+    MT->log(111111);
     return $file;
 }
 
@@ -780,6 +786,11 @@ sub create_thumbnail {
         }
     }
     return ( $thumb, $w, $h );
+}
+
+sub utf8_off {
+    my $text = shift;
+    return MT::I18N::utf8_off( $text );
 }
 
 1;

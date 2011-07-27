@@ -18,7 +18,7 @@ sub _upload_multi {
     }
     my $middle_path = $app->param( 'middle_path' );
     $middle_path =~ s!^/!!;
-    $middle_path =~ s!\.\.!!;
+    $middle_path =~ s!\.\.!!g;
     my $upload_dir = File::Spec->catdir( $site_path, $middle_path );
     if (! is_writable( $upload_dir, $blog ) ) {
         return MT->translate( 'Invalid request.' );
