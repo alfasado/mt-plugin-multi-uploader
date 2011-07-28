@@ -209,14 +209,13 @@ sub upload {
     for my $file ( @files ) {
         my $orig_filename = file_basename( $file );
         my $basename = $orig_filename;
-        $basename = encode_url( $basename );
         $basename =~ s/%2E/\./g;
+        $basename = encode_url( $basename );
         $basename =~ s!\\!/!g;    ## Change backslashes to forward slashes
         $basename =~ s!^.*/!!;    ## Get rid of full directory paths
         if ( $basename =~ m!\.\.|\0|\|! ) {
             return ( undef, 1 );
         }
-        MT->log($basename);
         $basename
             = Encode::is_utf8( $basename )
             ? $basename
@@ -253,6 +252,9 @@ sub upload {
             $out = uniq_filename( $out );
         }
         $dir =~ s!/$!! unless $dir eq '/';
+        if (! is_writable( $dir, $blog ) ) {
+            return ( undef, 1 );
+        }
         unless ( $fmgr->exists( $dir ) ) {
             $fmgr->mkpath( $dir ) or return MT->trans_error( "Error making path '[_1]': [_2]",
                                     $out, $fmgr->errstr );
@@ -460,8 +462,6 @@ sub current_user {
 sub set_upload_filename {
     my $file = shift;
     $file = File::Basename::basename( $file );
-    MT->log(1235);
-
     my $ctext = encode_url( $file );
     if ( $ctext ne $file ) {
         unless ( MT->version_number < 5 ) {
@@ -477,7 +477,6 @@ sub set_upload_filename {
         $file = substr ( $file, 0, 255 - $ext_len );
         $file .= '.' . $extension;
     }
-    MT->log(111111);
     return $file;
 }
 
@@ -791,6 +790,17 @@ sub create_thumbnail {
 sub utf8_off {
     my $text = shift;
     return MT::I18N::utf8_off( $text );
+}
+
+sub is_image {
+    my $file = shift;
+    my $basename = File::Basename::basename( $file );
+    require MT::Asset;
+    my $asset_pkg = MT::Asset->handler_for_file( $basename );
+    if ( $asset_pkg eq 'MT::Asset::Image' ) {
+        return 1;
+    }
+    return 0;
 }
 
 1;
