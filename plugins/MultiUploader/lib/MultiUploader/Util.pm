@@ -261,6 +261,7 @@ sub upload {
         }
         my $temp = "$out.new";
         my $umask = $app->config( 'UploadUmask' );
+        my $old = umask( oct $umask );
         open ( my $fh, ">$temp" ) or die "Can't open $temp!";
         if ( is_image( $file ) ) {
             require MT::Image;
@@ -269,7 +270,6 @@ sub upload {
                 next;
             }
         }
-        my $old = umask( oct $umask );
         binmode ( $fh );
         while( read ( $file, my $buffer, 1024 ) ) {
             $buffer = format_LF( $buffer ) if $format_LF;
