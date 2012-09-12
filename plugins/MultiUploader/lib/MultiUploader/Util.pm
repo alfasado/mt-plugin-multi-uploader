@@ -167,7 +167,7 @@ sub upload {
     my ( $app, $blog, $name, $dir, $params ) = @_;
     my $limit = $app->config( 'CGIMaxUpload' ) || 20480000;
     $app->validate_magic() or return 0;
-    return 0 unless $app->can_do( 'save_asset' );
+    return 0 unless $app->can_do( 'upload' );
     return 0 unless $blog;
 #    my %params = ( object => $obj,
 #                   author => $author,
